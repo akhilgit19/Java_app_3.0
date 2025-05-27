@@ -76,7 +76,7 @@ pipeline {
             steps {
                 script {
                     // Artifactory configuration
-                    def artifactoryUrl = 'http://35.172.128.222:8082//artifactory'
+                    def artifactoryUrl = 'http://35.172.128.222:8082/artifactory'
                     def repoName = 'example-repo-local'
                     def targetPath = 'kubernetes-configmap-reload-0.0.1-SNAPSHOT.jar'
                     def localArtifactPath = '/var/lib/jenkins/.m2/repository/com/minikube/sample/kubernetes-configmap-reload/0.0.1-SNAPSHOT/kubernetes-configmap-reload-0.0.1-SNAPSHOT.jar'
