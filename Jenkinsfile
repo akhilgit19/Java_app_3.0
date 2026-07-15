@@ -70,38 +70,50 @@ pipeline {
             }
         }
 
-        // 📦 New JFrog Upload Stage Inserted Here
-        // stage('Build and Add Artifact to the repo : JFrog') {
-        //     when { expression { params.action == 'create' } }
-        //     steps {
-        //         script {
-        //             // Artifactory configuration
-        //             def artifactoryUrl = 'http://35.172.128.222:8082/artifactory'
-        //             def repoName = 'example-repo-local'
-        //             def targetPath = 'kubernetes-configmap-reload-0.0.1-SNAPSHOT.jar'
-        //             def localArtifactPath = '/var/lib/jenkins/.m2/repository/com/minikube/sample/kubernetes-configmap-reload/0.0.1-SNAPSHOT/kubernetes-configmap-reload-0.0.1-SNAPSHOT.jar'
-        //             def apiKeyOrUsername = 'admin'
-        //             def apiKeyOrPassword = 'Goodday@143'
+        // 📦 Upload Artifact to JFrog Artifactory
+stage('Build and Add Artifact to the repo : JFrog') {
+    when {
+        expression { params.action == 'create' }
+    }
 
-        //             // Extract the filename
-        //             def fileName = localArtifactPath.split('/').last()
-        //             def uploadUrl = "${artifactoryUrl}/${repoName}/${targetPath}/${fileName}"
+    steps {
+        script {
 
-        //             // Upload using curl
-        //             def uploadCommand = """
-        //             curl -X PUT -u ${apiKeyOrUsername}:${apiKeyOrPassword} -T ${localArtifactPath} ${uploadUrl}
-        //             """.stripIndent()
+            // Artifactory Configuration
+            def artifactoryUrl = 'http://35.170.64.84:8082/artifactory'
+            def repoName = 'example-repo-local'
+            def targetPath = 'kubernetes-configmap-reload/0.0.1-SNAPSHOT'
+            def localArtifactPath = '/var/lib/jenkins/.m2/repository/com/minikube/sample/kubernetes-configmap-reload/0.0.1-SNAPSHOT/kubernetes-configmap-reload-0.0.1-SNAPSHOT.jar'
 
-        //             def uploadResult = sh(script: uploadCommand, returnStatus: true)
+            // Extract filename
+            def fileName = localArtifactPath.tokenize('/').last()
 
-        //             if (uploadResult == 0) {
-        //                 echo "Artifact successfully uploaded to Artifactory."
-        //             } else {
-        //                 error "Failed to upload artifact to Artifactory. Exit code: ${uploadResult}"
-        //             }
-        //         }
-        //     }
-        // }
+            // Upload URL
+            def uploadUrl = "${artifactoryUrl}/${repoName}/${targetPath}/${fileName}"
+
+            // Securely retrieve credentials from Jenkins
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'jfrog-creds',
+                    usernameVariable: 'JFROG_USER',
+                    passwordVariable: 'JFROG_PASS'
+                )
+            ]) {
+
+                sh """
+                    echo "Uploading artifact to JFrog Artifactory..."
+
+                    curl -v \
+                        -u \$JFROG_USER:\$JFROG_PASS \
+                        -T ${localArtifactPath} \
+                        "${uploadUrl}"
+                """
+            }
+
+            echo "Artifact uploaded successfully."
+        }
+    }
+}
 
         stage('Docker Image Build') {
             when { expression { params.action == 'create' } }
